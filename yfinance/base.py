@@ -23,7 +23,7 @@ from __future__ import print_function
 
 import time as _time
 import datetime as _datetime
-import requests as _requests
+
 import pandas as _pd
 import numpy as _np
 
@@ -40,6 +40,28 @@ from . import utils
 
 from . import shared
 
+# From https://www.peterbe.com/plog/best-practice-with-retries-with-requests
+import requests as requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+def requests_retry_session(
+    retries=3,
+    backoff_factor=0.3,
+    status_forcelist=(500, 502, 504),
+    session=None,
+):
+    session = session or requests.Session()
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    return session
 
 class TickerBase():
     def __init__(self, ticker):
@@ -147,7 +169,13 @@ class TickerBase():
 
         # Getting data from json
         url = "{}/v8/finance/chart/{}".format(self._base_url, self.ticker)
-        data = _requests.get(url=url, params=params, proxies=proxy)
+        # data = _requests.get(url=url, params=params, proxies=proxy, timeout=(5, 40))
+        try:
+            data  = requests_retry_session().get(url=url, params=params, proxies=proxy, timeout=(5, 20))
+        except Exception as e:
+            raise Exception('Failure: {}'.format(e))
+
+
         if "Will be right back" in data.text:
             raise RuntimeError("*** YAHOO! FINANCE IS CURRENTLY DOWN! ***\n"
                                "Our engineers are working quickly to resolve "
@@ -283,13 +311,16 @@ class TickerBase():
         url = "{}/{}/holders".format(self._scrape_url, self.ticker)
         holders = _pd.read_html(url)
         self._major_holders = holders[0]
-        self._institutional_holders = holders[1]
-        if 'Date Reported' in self._institutional_holders:
-            self._institutional_holders['Date Reported'] = _pd.to_datetime(
-                self._institutional_holders['Date Reported'])
-        if '% Out' in self._institutional_holders:
-            self._institutional_holders['% Out'] = self._institutional_holders[
-                '% Out'].str.replace('%', '').astype(float)/100
+        try:
+            self._institutional_holders = holders[1]
+            if 'Date Reported' in self._institutional_holders:
+                self._institutional_holders['Date Reported'] = _pd.to_datetime(
+                    self._institutional_holders['Date Reported'])
+            if '% Out' in self._institutional_holders:
+                self._institutional_holders['% Out'] = self._institutional_holders[
+                    '% Out'].str.replace('%', '').astype(float)/100
+        except:
+            pass
 
         # sustainability
         d = {}
@@ -499,12 +530,12 @@ class TickerBase():
         url = 'https://markets.businessinsider.com/ajax/' \
               'SearchController_Suggest?max_results=25&query=%s' \
             % urlencode(q)
-        data = _requests.get(url=url, proxies=proxy).text
+        data = requests.get(url=url, proxies=proxy).text
 
         search_str = '"{}|'.format(ticker)
         if search_str not in data:
             if q.lower() in data.lower():
-                search_str = '"|'
+                search_str = '"|'.format(ticker)
                 if search_str not in data:
                     self._isin = '-'
                     return self._isin
