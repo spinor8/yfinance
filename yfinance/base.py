@@ -171,7 +171,7 @@ class TickerBase():
         url = "{}/v8/finance/chart/{}".format(self._base_url, self.ticker)
         # data = _requests.get(url=url, params=params, proxies=proxy, timeout=(5, 40))
         try:
-            data  = requests_retry_session().get(url=url, params=params, proxies=proxy, timeout=(5, 20))
+            data  = requests_retry_session().get(url=url, params=params, proxies=proxy, timeout=(15, 30))
         except Exception as e:
             raise Exception('Failure: {}'.format(e))
 
