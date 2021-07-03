@@ -431,30 +431,9 @@ class TickerBase():
             return data.to_dict()
         return data
 
-    def get_major_holders(self, proxy=None, as_dict=False, *args, **kwargs):
-        self._get_fundamentals(proxy)
-        data = self._major_holders
-        if as_dict:
-            return data.to_dict()
-        return data
-
-    def get_institutional_holders(self, proxy=None, as_dict=False, *args, **kwargs):
-        self._get_fundamentals(proxy)
-        data = self._institutional_holders
-        if as_dict:
-            return data.to_dict()
-        return data
-
     def get_info(self, proxy=None, as_dict=False, *args, **kwargs):
         self._get_fundamentals(proxy)
         data = self._info
-        if as_dict:
-            return data.to_dict()
-        return data
-
-    def get_sustainability(self, proxy=None, as_dict=False, *args, **kwargs):
-        self._get_fundamentals(proxy)
-        data = self._sustainability
         if as_dict:
             return data.to_dict()
         return data
@@ -508,43 +487,3 @@ class TickerBase():
         actions = self._history[["Dividends", "Stock Splits"]]
         return actions[actions != 0].dropna(how='all').fillna(0)
 
-    def get_isin(self, proxy=None):
-        # *** experimental ***
-        if self._isin is not None:
-            return self._isin
-
-        ticker = self.ticker.upper()
-
-        if "-" in ticker or "^" in ticker:
-            self._isin = '-'
-            return self._isin
-
-        # setup proxy in requests format
-        if proxy is not None:
-            if isinstance(proxy, dict) and "https" in proxy:
-                proxy = proxy["https"]
-            proxy = {"https": proxy}
-
-        q = ticker
-        self.get_info(proxy=proxy)
-        if "shortName" in self._info:
-            q = self._info['shortName']
-
-        url = 'https://markets.businessinsider.com/ajax/' \
-              'SearchController_Suggest?max_results=25&query=%s' \
-            % urlencode(q)
-        data = requests.get(url=url, proxies=proxy, headers=headers).text
-
-        search_str = '"{}|'.format(ticker)
-        if search_str not in data:
-            if q.lower() in data.lower():
-                search_str = '"|'.format(ticker)
-                if search_str not in data:
-                    self._isin = '-'
-                    return self._isin
-            else:
-                self._isin = '-'
-                return self._isin
-
-        self._isin = data.split(search_str)[1].split('"')[0].split('|')[0]
-        return self._isin

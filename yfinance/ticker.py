@@ -107,18 +107,6 @@ class Ticker(TickerBase):
     # ------------------------
 
     @property
-    def isin(self):
-        return self.get_isin()
-
-    @property
-    def major_holders(self):
-        return self.get_major_holders()
-
-    @property
-    def institutional_holders(self):
-        return self.get_institutional_holders()
-
-    @property
     def dividends(self):
         return self.get_dividends()
 
@@ -186,9 +174,6 @@ class Ticker(TickerBase):
     def quarterly_cashflow(self):
         return self.get_cashflow(freq='quarterly')
 
-    @property
-    def sustainability(self):
-        return self.get_sustainability()
 
     @property
     def options(self):
