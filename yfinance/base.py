@@ -44,6 +44,9 @@ from . import shared
 import requests as requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
+
+headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
+
 def requests_retry_session(
     retries=3,
     backoff_factor=0.3,
@@ -171,7 +174,7 @@ class TickerBase():
         url = "{}/v8/finance/chart/{}".format(self._base_url, self.ticker)
         # data = _requests.get(url=url, params=params, proxies=proxy, timeout=(5, 40))
         try:
-            data  = requests_retry_session().get(url=url, params=params, proxies=proxy, timeout=(15, 30))
+            data  = requests_retry_session().get(url=url, params=params, proxies=proxy, headers=headers, timeout=(15, 30))
         except Exception as e:
             raise Exception('Failure: {}'.format(e))
 
@@ -530,7 +533,7 @@ class TickerBase():
         url = 'https://markets.businessinsider.com/ajax/' \
               'SearchController_Suggest?max_results=25&query=%s' \
             % urlencode(q)
-        data = requests.get(url=url, proxies=proxy).text
+        data = requests.get(url=url, proxies=proxy, headers=headers).text
 
         search_str = '"{}|'.format(ticker)
         if search_str not in data:
