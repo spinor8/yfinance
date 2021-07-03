@@ -43,11 +43,12 @@ def empty_df(index=[]):
 
 
 def get_json(url, proxy=None):
+    # html = _requests.get(url=url, proxies=proxy).text
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
     html = _requests.get(url=url, proxies=proxy, headers=headers).text
 
     if "QuoteSummaryStore" not in html:
-        html = _requests.get(url=url, proxies=proxy, headers=headers).text
+        html = _requests.get(url=url, proxies=proxy).text
         if "QuoteSummaryStore" not in html:
             return {}
 
